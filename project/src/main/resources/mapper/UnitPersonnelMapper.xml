@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.UnitPersonnelMapper">
+    <select id="selectPersonnelWithUnitName" resultType="org.project.model.UnitPersonnel">
+        SELECT
+        up.*,
+        u.unit_name AS unitName
+        FROM
+        unit_personnel up
+        LEFT JOIN unit u ON up.unit_id = u.unit_id
+        <where>
+            <if test="ew != null and ew.sqlSegment != null and ew.sqlSegment != ''">
+                ${ew.sqlSegment}
+            </if>
+        </where>
+        ORDER BY up.created_at DESC
+    </select>
+</mapper>

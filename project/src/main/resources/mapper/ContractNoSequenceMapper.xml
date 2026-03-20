@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.ContractMapper.ContractNoSequenceMapper">
+
+    <!-- 更新序列号（使用乐观锁） -->
+    <update id="updateSequence">
+        UPDATE contract_no_sequence
+        SET last_seq = last_seq + 1,
+            updated_at = NOW()
+        WHERE region_code = #{regionCode}
+          AND unit_code = #{unitCode}
+          AND year = #{year}
+    </update>
+
+</mapper>

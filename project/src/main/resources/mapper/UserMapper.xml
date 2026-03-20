@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.UserMapper">
+
+    <select id="selectUserPageWithUnit" resultType="org.project.model.User">
+        SELECT
+            u.*, un.unit_name AS unit_name
+        FROM user u
+        LEFT JOIN unit un ON u.unit_id = un.unit_id
+        <where>
+            <if test="username != null and username != ''">
+                AND u.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="roleId != null">
+                AND u.role_id = #{roleId}
+            </if>
+        </where>
+        ORDER BY u.id DESC
+    </select>
+
+</mapper>

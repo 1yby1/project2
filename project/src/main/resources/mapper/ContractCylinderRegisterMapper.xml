@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.CylinderMapper.ContractCylinderRegisterMapper">
+
+    <!-- 分页查询气瓶登记列表（带关联信息） -->
+    <select id="selectRegisterPage" resultType="org.project.model.contract.ContractCylinderRegister">
+        SELECT
+        r.*,
+        ctd.name AS cylinderTypeName,
+        c.contract_no AS contractNo,
+        u.unit_name AS unitName
+        FROM contract_cylinder_register r
+        LEFT JOIN cylinder_type_dict ctd ON r.cylinder_type_id = ctd.cylinder_type_id
+        LEFT JOIN contract c ON r.contract_id = c.contract_id
+        LEFT JOIN unit u ON c.unit_id = u.unit_id
+        <where>
+            <if test="contractId != null">
+                AND r.contract_id = #{contractId}
+            </if>
+            <if test="cylinderTypeId != null">
+                AND r.cylinder_type_id = #{cylinderTypeId}
+            </if>
+            <if test="cylinderNo != null and cylinderNo != ''">
+                AND r.cylinder_no LIKE CONCAT('%', #{cylinderNo}, '%')
+            </if>
+            <if test="rfidTag != null and rfidTag != ''">
+                AND r.rfid_tag = #{rfidTag}
+            </if>
+            <if test="cylinderStatus != null">
+                AND r.cylinder_status = #{cylinderStatus}
+            </if>
+            <if test="unitId != null">
+                AND c.unit_id = #{unitId}
+            </if>
+            <if test="inspectionStatus != null and inspectionStatus != ''">
+                <if test="inspectionStatus == 'overdue'">
+                    AND r.next_inspect_date &lt; CURDATE()
+                </if>
+                <if test="inspectionStatus == 'dueSoon'">
+                    AND r.next_inspect_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                </if>
+                <if test="inspectionStatus == 'normal'">
+                    AND (r.next_inspect_date IS NULL OR r.next_inspect_date &gt; DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+                </if>
+            </if>
+        </where>
+        ORDER BY r.registered_at DESC
+    </select>
+
+    <!-- 根据气瓶编号查询详情（带关联信息） -->
+    <select id="selectByCylinderNo" resultType="org.project.model.contract.ContractCylinderRegister">
+        SELECT
+            r.*,
+            ctd.name AS cylinderTypeName,
+            c.contract_no AS contractNo,
+            u.unit_name AS unitName,
+            usr.real_name AS registeredByName
+        FROM contract_cylinder_register r
+                 LEFT JOIN cylinder_type_dict ctd ON r.cylinder_type_id = ctd.cylinder_type_id
+                 LEFT JOIN contract c ON r.contract_id = c.contract_id
+                 LEFT JOIN unit u ON c.unit_id = u.unit_id
+                 LEFT JOIN user usr ON r.registered_by = usr.id
+        WHERE r.cylinder_no = #{cylinderNo}
+    </select>
+
+    <!-- 查询即将到期的气瓶（下次检验日期在指定天数内） -->
+    <select id="selectInspectDueSoon" resultType="org.project.model.contract.ContractCylinderRegister">
+        SELECT
+            r.*,
+            ctd.name AS cylinderTypeName,
+            c.contract_no AS contractNo,
+            u.unit_name AS unitName
+        FROM contract_cylinder_register r
+                 LEFT JOIN cylinder_type_dict ctd ON r.cylinder_type_id = ctd.cylinder_type_id
+                 LEFT JOIN contract c ON r.contract_id = c.contract_id
+                 LEFT JOIN unit u ON c.unit_id = u.unit_id
+        WHERE r.cylinder_status = 1
+          AND r.next_inspect_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY r.next_inspect_date ASC
+    </select>
+
+    <!-- 查询已过期的气瓶（下次检验日期已过） -->
+    <select id="selectInspectOverdue" resultType="org.project.model.contract.ContractCylinderRegister">
+        SELECT
+            r.*,
+            ctd.name AS cylinderTypeName,
+            c.contract_no AS contractNo,
+            u.unit_name AS unitName
+        FROM contract_cylinder_register r
+                 LEFT JOIN cylinder_type_dict ctd ON r.cylinder_type_id = ctd.cylinder_type_id
+                 LEFT JOIN contract c ON r.contract_id = c.contract_id
+                 LEFT JOIN unit u ON c.unit_id = u.unit_id
+        WHERE r.cylinder_status IN (1, 2)
+          AND r.next_inspect_date &lt; CURDATE()
+        ORDER BY r.next_inspect_date ASC
+    </select>
+
+    <!-- 批量查询指定合同下的所有气瓶 -->
+    <select id="selectByContractId" resultType="org.project.model.contract.ContractCylinderRegister">
+        SELECT
+            r.*,
+            ctd.name AS cylinderTypeName
+        FROM contract_cylinder_register r
+                 LEFT JOIN cylinder_type_dict ctd ON r.cylinder_type_id = ctd.cylinder_type_id
+        WHERE r.contract_id = #{contractId}
+        ORDER BY r.registered_at ASC
+    </select>
+
+</mapper>

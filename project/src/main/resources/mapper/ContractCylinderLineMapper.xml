@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.ContractMapper.ContractCylinderLineMapper">
+
+    <!-- 查询合同的气瓶明细（带类型名称） -->
+    <select id="selectByContractIdWithTypeName" resultType="org.project.model.contract.ContractCylinderLine">
+        SELECT
+            ccl.*,
+            ctd.name as cylinderTypeName
+        FROM contract_cylinder_line ccl
+        LEFT JOIN cylinder_type_dict ctd ON ccl.cylinder_type_id = ctd.cylinder_type_id
+        WHERE ccl.contract_id = #{contractId}
+        ORDER BY ccl.line_id ASC
+    </select>
+
+    <!-- 批量插入气瓶明细 -->
+    <insert id="insertBatch">
+        INSERT INTO contract_cylinder_line
+        (contract_id, cylinder_type_id, cylinder_qty, unit_price, years, 
+         original_amount, discount_rate, discount_amount, final_amount, created_at)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.contractId}, #{item.cylinderTypeId}, #{item.cylinderQty}, #{item.unitPrice}, #{item.years},
+             #{item.originalAmount}, #{item.discountRate}, #{item.discountAmount}, #{item.finalAmount}, NOW())
+        </foreach>
+    </insert>
+
+</mapper>

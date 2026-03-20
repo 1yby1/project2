@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.ContractMapper.ContractItemMapper">
+
+    <!-- 批量插入产品明细 -->
+    <insert id="insertBatch">
+        INSERT INTO contract_item
+        (contract_id, product_code, product_name, quantity, unit_price, amount, created_at)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.contractId}, #{item.productCode}, #{item.productName}, 
+             #{item.quantity}, #{item.unitPrice}, #{item.amount}, NOW())
+        </foreach>
+    </insert>
+
+</mapper>

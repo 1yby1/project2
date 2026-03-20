@@ -1,0 +1,8 @@
+{
+  "outPath": "target/smart-doc",
+  "allInOne": true,
+  "coverOld": true,
+  "allInOneDocFileName": "smart-doc",
+  "serverUrl": "http://localhost:8081/server",
+  "projectName": "SmartDoc Example"
+}

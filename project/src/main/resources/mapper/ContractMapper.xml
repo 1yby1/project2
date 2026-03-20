@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.project.mapper.ContractMapper.ContractMapper">
+
+    <!-- 分页查询合同列表（带单位信息、单一气瓶类型） -->
+    <select id="selectContractPage" resultType="org.project.model.contract.Contract">
+        SELECT
+            c.*,
+            u.unit_name as unitName,
+            u.unit_principal_name as unitPrincipalName,
+            u.unit_principal_phone as unitPrincipalPhone,
+            u.social_credit_code as socialCreditCode,
+            ctd.name as cylinderTypes,
+            ccl.cylinder_qty as cylinderQty
+        FROM contract c
+        LEFT JOIN unit u ON c.unit_id = u.unit_id
+        LEFT JOIN contract_cylinder_line ccl ON ccl.contract_id = c.contract_id
+        LEFT JOIN cylinder_type_dict ctd ON ctd.cylinder_type_id = ccl.cylinder_type_id
+
+        <where>
+            <if test="unitName != null and unitName != ''">
+                AND u.unit_name LIKE CONCAT('%', #{unitName}, '%')
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    c.contract_no LIKE CONCAT('%', #{keyword}, '%')
+                    OR u.unit_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR c.party_a_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR c.party_b_name LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="contractStatus != null">
+                AND c.contract_status = #{contractStatus}
+            </if>
+            <if test="startDateBegin != null">
+                AND c.start_date &gt;= #{startDateBegin}
+            </if>
+            <if test="startDateEnd != null">
+                AND c.start_date &lt;= #{startDateEnd}
+            </if>
+            <if test="endDateBegin != null">
+                AND c.end_date &gt;= #{endDateBegin}
+            </if>
+            <if test="endDateEnd != null">
+                AND c.end_date &lt;= #{endDateEnd}
+            </if>
+        </where>
+        ORDER BY c.created_at DESC
+    </select>
+
+    <!-- 获取合同详情（带单位信息、单一气瓶类型） -->
+    <select id="selectContractDetailById" resultType="org.project.model.contract.Contract">
+        SELECT
+            c.*,
+            u.unit_name as unitName,
+            u.unit_principal_name as unitPrincipalName,
+            u.unit_principal_phone as unitPrincipalPhone,
+            u.unit_address as unitAddress,
+            u.social_credit_code as socialCreditCode,
+            ctd.name as cylinderTypes
+        FROM contract c
+        LEFT JOIN unit u ON c.unit_id = u.unit_id
+        LEFT JOIN contract_cylinder_line ccl ON ccl.contract_id = c.contract_id
+        LEFT JOIN cylinder_type_dict ctd ON ctd.cylinder_type_id = ccl.cylinder_type_id
+        WHERE c.contract_id = #{contractId}
+    </select>
+
+    <!-- 查询续约链（递归查询） -->
+    <select id="selectRenewalChain" resultType="org.project.model.contract.Contract">
+        WITH RECURSIVE renewal_chain AS (
+            -- 查找根合同（parent_contract_id为NULL或找到最初的父合同）
+            SELECT * FROM contract WHERE contract_id = #{contractId}
+            UNION ALL
+            -- 查找所有子合同
+            SELECT c.* FROM contract c
+            INNER JOIN renewal_chain rc ON c.parent_contract_id = rc.contract_id
+        )
+        SELECT * FROM renewal_chain
+        ORDER BY renewal_count ASC
+    </select>
+
+    <!-- 查询即将到期的合同 -->
+    <select id="selectExpiringContracts" resultType="org.project.model.contract.Contract">
+        SELECT * FROM contract
+        WHERE contract_status = 5
+        AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL #{days} DAY)
+        ORDER BY end_date ASC
+    </select>
+
+</mapper>
